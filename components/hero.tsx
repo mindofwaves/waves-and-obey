@@ -46,11 +46,25 @@ vec2 coverUV(vec2 uv, vec2 imgSize, vec2 canvas) {
     return uv * r + (1.0 - r) * 0.5;
 }
 
+/* Frosted-glass base: multi-sample blur on the mesh texture. */
+vec3 sampleFrosted(vec2 uv, vec2 imgSize, vec2 canvas) {
+    float blur = 0.0035;
+    vec3 acc = vec3(0.0);
+    /* 13-tap blur (center + ring of 12) for soft frosted look */
+    acc += texture(u_mesh, coverUV(uv, imgSize, canvas)).rgb * 2.0;
+    for (int i = 0; i < 12; i++) {
+        float angle = float(i) * 6.2831853 / 12.0;
+        vec2 off = vec2(cos(angle), sin(angle)) * blur;
+        acc += texture(u_mesh, coverUV(uv + off, imgSize, canvas)).rgb;
+    }
+    return acc / 14.0;
+}
+
 /* Smooth glass circle mask. */
 float glassMask(vec2 uv, vec2 center, float r, float aspect) {
     vec2 ac = vec2(1.0, 1.0 / aspect);
     float d = distance(uv * ac, center * ac);
-    return smoothstep(r, r * 0.5, d);
+    return smoothstep(r, r * 0.45, d);
 }
 
 /* Sample blob with refraction + chromatic aberration. */
@@ -60,12 +74,12 @@ vec3 sampleGlass(vec2 uv, vec2 center, float r, float strength) {
     float nd   = clamp(d / r, 0.0, 1.0);
 
     /* barrel distortion (lens magnification) */
-    float power      = (1.0 - nd * nd) * 0.22 * strength;
+    float power      = (1.0 - nd * nd) * 0.20 * strength;
     vec2  displaced   = uv - delta * power;
     vec2  bUV         = coverUV(displaced, u_blobSize, u_resolution);
 
     /* chromatic aberration (stronger toward glass edge) */
-    float ca    = nd * 0.008 * strength;
+    float ca    = nd * 0.007 * strength;
     vec2  caDir = d > 0.001 ? normalize(delta) : vec2(1.0, 0.0);
 
     float rv = texture(u_blob, coverUV(displaced + caDir * ca, u_blobSize, u_resolution)).r;
@@ -82,35 +96,21 @@ vec3 applyGlass(vec3 bg, vec2 uv, vec2 center, float r, float strength, float as
 
     vec2 ac = vec2(1.0, 1.0 / aspect);
     float d = distance(uv * ac, center * ac);
-    float nd = clamp(d / r, 0.0, 1.0);
-    vec2 delta = uv - center;
 
     /* refracted blob colour */
     vec3 glass = sampleGlass(uv, center, r, strength);
 
-    /* ---- fresnel ring ------------------------------------------- */
-    float ring = smoothstep(r * 0.98, r * 0.72, d)
-               * smoothstep(r * 0.42, r * 0.62, d);
-    float fresnel = ring * 0.45 * strength;
-
-    /* ---- specular highlight (light from upper-left) ------------- */
-    vec2  norm = d > 0.001 ? normalize(delta) : vec2(0.0);
-    float spec = pow(max(0.0, dot(norm, normalize(vec2(-0.45, 0.55)))), 18.0)
-               * mask * 0.35;
-
-    /* ---- inner shadow for depth --------------------------------- */
-    float innerShadow = smoothstep(r * 0.45, r, d) * 0.12 * mask;
-
-    /* ---- subtle caustic shimmer --------------------------------- */
-    float shimmer = sin(u_time * 1.8 + d * 50.0) * 0.015 * mask;
+    /* ---- soft fresnel edge glow --------------------------------- */
+    float ring = smoothstep(r * 0.98, r * 0.75, d)
+               * smoothstep(r * 0.4, r * 0.6, d);
+    float fresnel = ring * 0.18 * strength;
 
     /* ---- compose ------------------------------------------------ */
     vec3 result = mix(bg, glass, mask);
-    result += vec3(fresnel + spec + shimmer);
-    result -= vec3(innerShadow);
+    result += vec3(fresnel);
 
-    /* subtle cool glass tint */
-    result += vec3(0.018, 0.028, 0.065) * mask;
+    /* very subtle cool glass tint */
+    result += vec3(0.01, 0.015, 0.04) * mask;
 
     return result;
 }
@@ -121,10 +121,9 @@ void main() {
     vec2 uv     = v_uv;
     float aspect = u_resolution.x / u_resolution.y;
 
-    /* base: mesh + white overlay */
-    vec2 mUV   = coverUV(uv, u_meshSize, u_resolution);
-    vec3 mesh  = texture(u_mesh, mUV).rgb;
-    vec3 base  = mix(mesh, vec3(1.0), 0.84);
+    /* base: frosted glass (blurred mesh + light tint) */
+    vec3 frosted = sampleFrosted(uv, u_meshSize, u_resolution);
+    vec3 base    = mix(frosted, vec3(1.0), 0.32);
 
     /* cursor → GL UV space (flip Y) */
     vec2 cur  = u_cursor / u_resolution;
@@ -154,7 +153,7 @@ void main() {
 /* ================================================================== */
 /*  Constants                                                          */
 /* ================================================================== */
-const SPOTLIGHT_RADIUS = 150;
+const SPOTLIGHT_RADIUS = 250;
 const LERP = 0.07;
 const ECHO_SPEED = 10;
 const ECHO_LIFE = 700;
