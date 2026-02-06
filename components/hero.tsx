@@ -259,12 +259,6 @@ function NameText({ className }: { className?: string }) {
   );
 }
 
-function NavText({ className }: { className?: string }) {
-  return (
-    <span className={className}>OBEYTHESIXTH &amp; WAVE$ ARTWORKS</span>
-  );
-}
-
 function SocialIcons({ className }: { className?: string }) {
   return (
     <div className={`flex gap-6 sm:gap-5 ${className ?? ""}`}>
@@ -303,12 +297,10 @@ export default function Hero() {
 
   /* Wrapper refs for parallax + inversion */
   const nameWrapRef = useRef<HTMLDivElement>(null);
-  const navWrapRef = useRef<HTMLDivElement>(null);
   const socialWrapRef = useRef<HTMLDivElement>(null);
 
   /* Reveal overlay refs (for CSS mask) */
   const nameRevealRef = useRef<HTMLDivElement>(null);
-  const navRevealRef = useRef<HTMLDivElement>(null);
   const socialRevealRef = useRef<HTMLDivElement>(null);
 
   /* Cursor state */
@@ -557,7 +549,6 @@ export default function Hero() {
       if (el) el.style.transform = `translate(${-px * s}px, ${-py * s}px)`;
     };
     setParallax(nameWrapRef.current, PARALLAX);
-    setParallax(navWrapRef.current, PARALLAX * 0.7);
     setParallax(socialWrapRef.current, PARALLAX * 0.5);
 
     if (gridRef.current) {
@@ -574,7 +565,6 @@ export default function Hero() {
     };
 
     applyMask(nameWrapRef.current, nameRevealRef.current);
-    applyMask(navWrapRef.current, navRevealRef.current);
     applyMask(socialWrapRef.current, socialRevealRef.current);
 
     raf.current = requestAnimationFrame(animate);
@@ -600,25 +590,12 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col justify-between w-full h-full safe-padding pointer-events-none">
-        {/* Top row */}
-        <div className="flex justify-between items-start">
-          {/* Name */}
-          <div ref={nameWrapRef} className="relative">
+        {/* Top — name centered horizontally */}
+        <div className="flex justify-center">
+          <div ref={nameWrapRef} className="relative text-center">
             <NameText className="text-el" />
             <div ref={nameRevealRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
               <NameText className="text-reveal" />
-            </div>
-          </div>
-
-          {/* Nav */}
-          <div ref={navWrapRef} className="relative pt-2">
-            <a href="#" className="text-el pointer-events-auto text-[0.65rem] sm:text-xs md:text-sm tracking-[0.25em] uppercase font-light transition-colors duration-300 hover:opacity-70">
-              <NavText />
-            </a>
-            <div ref={navRevealRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
-              <span className="text-reveal-light text-[0.65rem] sm:text-xs md:text-sm tracking-[0.25em] uppercase font-light">
-                <NavText />
-              </span>
             </div>
           </div>
         </div>
