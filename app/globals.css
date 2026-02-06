@@ -13,10 +13,38 @@ body {
   background: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Text elements – default dark, inverted to white                    */
+/*  Cursor: hide only on hover-capable devices                         */
+/* ------------------------------------------------------------------ */
+@media (hover: hover) and (pointer: fine) {
+  .hero-container {
+    cursor: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Safe-area padding for notched phones                               */
+/* ------------------------------------------------------------------ */
+.safe-padding {
+  padding: 1.75rem;
+  padding-top: max(1.75rem, env(safe-area-inset-top, 1.75rem));
+  padding-bottom: max(1.75rem, env(safe-area-inset-bottom, 1.75rem));
+  padding-left: max(1.75rem, env(safe-area-inset-left, 1.75rem));
+  padding-right: max(1.75rem, env(safe-area-inset-right, 1.75rem));
+}
+@media (min-width: 640px) {
+  .safe-padding { padding: 2.5rem; }
+}
+@media (min-width: 768px) {
+  .safe-padding { padding: 3.5rem; }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Text elements — default dark layer                                 */
 /* ------------------------------------------------------------------ */
 .text-el {
   color: #1a1a1a;
@@ -24,12 +52,38 @@ body {
   will-change: color, transform;
 }
 
-.text-el.inverted {
-  color: #ffffff;
+/* ------------------------------------------------------------------ */
+/*  Text reveal — blobrender image through letterforms                 */
+/* ------------------------------------------------------------------ */
+.text-reveal {
+  background: linear-gradient(
+    135deg,
+    #e879f9 0%,
+    #a78bfa 25%,
+    #818cf8 50%,
+    #38bdf8 75%,
+    #f472b6 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
-.text-el.inverted svg {
-  fill: #ffffff;
+.text-reveal-light {
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Social icons — 44px min tap target                                 */
+/* ------------------------------------------------------------------ */
+.social-tap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -43,11 +97,9 @@ body {
   will-change: transform;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Mobile: show the blobrender image without interaction              */
-/* ------------------------------------------------------------------ */
-@media (hover: none) {
-  canvas {
-    opacity: 0.35 !important;
+@media (max-width: 640px) {
+  .grid-pattern {
+    background-size: 40px 40px;
+    opacity: 0.3;
   }
 }
