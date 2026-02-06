@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/*  Base                                                               */
+/* ------------------------------------------------------------------ */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Text elements – default dark, inverted to white                    */
+/* ------------------------------------------------------------------ */
+.text-el {
+  color: #1a1a1a;
+  transition: color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: color, transform;
+}
+
+.text-el.inverted {
+  color: #ffffff;
+}
+
+.text-el.inverted svg {
+  fill: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Grid pattern                                                       */
+/* ------------------------------------------------------------------ */
+.grid-pattern {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.45;
+  will-change: transform;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mobile: show the blobrender image without interaction              */
+/* ------------------------------------------------------------------ */
+@media (hover: none) {
+  canvas {
+    opacity: 0.35 !important;
+  }
+}
