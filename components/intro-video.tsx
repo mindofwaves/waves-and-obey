@@ -51,13 +51,16 @@ export default function IntroVideo({ onComplete }: IntroVideoProps) {
         onEnded={triggerEnd}
       />
 
-      {/* Skip button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           triggerEnd();
         }}
-        className="absolute bottom-8 right-8 text-white/40 text-sm font-body tracking-[0.15em] uppercase hover:text-white/70 transition-colors duration-300 z-10"
+        className="absolute z-10 text-white/40 text-sm font-body tracking-[0.15em] uppercase hover:text-white/70 active:text-white/80 transition-colors duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+        style={{
+          bottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
+          right: "max(1.5rem, env(safe-area-inset-right, 1.5rem))",
+        }}
       >
         Skip
       </button>

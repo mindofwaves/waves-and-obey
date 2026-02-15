@@ -74,8 +74,8 @@ export default function LeftGallery({ open, onClose }: LeftGalleryProps) {
         <span>Back</span>
       </button>
 
-      <div ref={scrollRef} className="relative z-10 w-full h-full overflow-y-auto overscroll-contain gallery-scroll" style={{ touchAction: "pan-y" }}>
-        <div className="min-h-full px-6 sm:px-12 md:px-20 py-24 sm:py-32">
+      <div ref={scrollRef} className="relative z-10 w-full h-full overflow-y-auto overscroll-contain gallery-scroll" style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}>
+        <div className="min-h-full px-6 sm:px-12 md:px-20 pt-24 sm:pt-32 pb-[max(5rem,calc(2rem+env(safe-area-inset-bottom)))]">
           <h2
             className={`font-display text-3xl sm:text-5xl md:text-6xl text-white font-bold tracking-tight mb-4 sm:mb-6 transition-all duration-700 ease-out ${open ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
             style={{ transitionDelay: open ? "150ms" : "0ms" }}
@@ -104,7 +104,7 @@ export default function LeftGallery({ open, onClose }: LeftGalleryProps) {
               </div>
             ))}
           </div>
-          <div className="h-20 sm:h-32" />
+          <div className="h-8 sm:h-16" />
         </div>
       </div>
     </div>

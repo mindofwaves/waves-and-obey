@@ -45,7 +45,14 @@ function HoloCardInner({
   const indexRef = useRef(index);
   indexRef.current = index;
 
+  const isTouchDevice = useRef(false);
+
+  useEffect(() => {
+    isTouchDevice.current = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  }, []);
+
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (isTouchDevice.current) return;
     e.preventDefault();
     const el = wrapRef.current;
     if (el) el.setPointerCapture(e.pointerId);
@@ -207,7 +214,7 @@ function HoloCardInner({
         transitionDelay: open ? `${delay}ms` : "0ms",
         position: "relative",
         cursor: "grab",
-        touchAction: "none",
+        touchAction: "auto",
         contain: "layout style",
       }}
       onPointerDown={onPointerDown}

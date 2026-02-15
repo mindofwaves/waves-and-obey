@@ -579,7 +579,7 @@ export default function Hero() {
   /*  Render                                                           */
   /* ================================================================ */
   return (
-    <div className="hero-container relative w-screen h-screen overflow-hidden select-none bg-white">
+    <div className="hero-container relative w-screen overflow-hidden select-none bg-[#f5f5f5]" style={{ height: "100dvh" }}>
       <canvas ref={canvasRef} className="absolute inset-0" />
 
       <div
