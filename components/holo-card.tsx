@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 
 interface HoloCardProps {
   src: string;
@@ -8,28 +8,26 @@ interface HoloCardProps {
   open: boolean;
   delay: number;
   aspect?: "3/4" | "1/1";
-  index: number;
-  onDragOver?: (fromIndex: number, toIndex: number) => void;
-  totalCards?: number;
+  index?: number;
+  onDragEnd?: (fromIndex: number, dropX: number, dropY: number) => void;
 }
 
-export default function HoloCard({
+function HoloCardInner({
   src,
   title,
   open,
   delay,
   aspect = "3/4",
-  index,
-  onDragOver,
-  totalCards = 3,
+  index = 0,
+  onDragEnd,
 }: HoloCardProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const glareRef = useRef<HTMLDivElement>(null);
   const holoRef = useRef<HTMLDivElement>(null);
 
+  const hoveringRef = useRef(false);
   const [hovering, setHovering] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   const rafId = useRef(0);
   const tiltTarget = useRef({ rx: 0, ry: 0, px: 50, py: 50 });
@@ -43,19 +41,20 @@ export default function HoloCard({
   const dragStartMouse = useRef({ x: 0, y: 0 });
   const dragStartPos = useRef({ x: 0, y: 0 });
   const liftAmount = useRef(0);
+  const lastPointer = useRef({ x: 0, y: 0 });
   const indexRef = useRef(index);
   indexRef.current = index;
-  const lastSwapTime = useRef(0);
 
-  /* --- Drag --- */
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const el = wrapRef.current;
+    if (el) el.setPointerCapture(e.pointerId);
     draggingRef.current = true;
-    setIsDragging(true);
     dragVelocity.current = { x: 0, y: 0 };
     dragStartMouse.current = { x: e.clientX, y: e.clientY };
     dragStartPos.current = { x: dragPos.current.x, y: dragPos.current.y };
+    lastPointer.current = { x: e.clientX, y: e.clientY };
+    if (wrapRef.current) wrapRef.current.style.zIndex = "100";
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -66,43 +65,19 @@ export default function HoloCard({
       x: dragStartPos.current.x + dx,
       y: dragStartPos.current.y + dy,
     };
-
-    /* Check if we should swap with a neighbour */
-    if (onDragOver && wrapRef.current) {
-      const now = Date.now();
-      if (now - lastSwapTime.current < 300) return;
-      const rect = wrapRef.current.getBoundingClientRect();
-      const cardW = rect.width;
-      const cardH = rect.height;
-      const offsetX = dragTarget.current.x - dragStartPos.current.x;
-      const offsetY = dragTarget.current.y - dragStartPos.current.y;
-
-      let targetIdx = -1;
-      if (Math.abs(offsetX) > cardW * 0.4 && Math.abs(offsetX) > Math.abs(offsetY)) {
-        targetIdx = offsetX > 0 ? indexRef.current + 1 : indexRef.current - 1;
-      } else if (Math.abs(offsetY) > cardH * 0.4) {
-        const cols = window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
-        targetIdx = offsetY > 0 ? indexRef.current + cols : indexRef.current - cols;
-      }
-
-      if (targetIdx >= 0 && targetIdx < totalCards && targetIdx !== indexRef.current) {
-        lastSwapTime.current = now;
-        dragStartMouse.current = { x: e.clientX, y: e.clientY };
-        dragStartPos.current = { x: 0, y: 0 };
-        dragTarget.current = { x: 0, y: 0 };
-        dragPos.current = { x: 0, y: 0 };
-        onDragOver(indexRef.current, targetIdx);
-      }
-    }
-  }, [onDragOver, totalCards]);
-
-  const onPointerUp = useCallback(() => {
-    draggingRef.current = false;
-    setIsDragging(false);
-    dragTarget.current = { x: 0, y: 0 };
+    lastPointer.current = { x: e.clientX, y: e.clientY };
   }, []);
 
-  /* --- Tilt --- */
+  const onPointerUp = useCallback(() => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    dragTarget.current = { x: 0, y: 0 };
+    if (wrapRef.current) wrapRef.current.style.zIndex = "";
+    if (onDragEnd) {
+      onDragEnd(indexRef.current, lastPointer.current.x, lastPointer.current.y);
+    }
+  }, [onDragEnd]);
+
   const handleMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (draggingRef.current) return;
     const card = cardRef.current;
@@ -119,19 +94,23 @@ export default function HoloCard({
   }, []);
 
   const handleEnter = useCallback(() => {
-    if (!draggingRef.current) setHovering(true);
+    if (!draggingRef.current) {
+      hoveringRef.current = true;
+      setHovering(true);
+    }
   }, []);
+
   const handleLeave = useCallback(() => {
+    hoveringRef.current = false;
     setHovering(false);
     tiltTarget.current = { rx: 0, ry: 0, px: 50, py: 50 };
   }, []);
 
-  /* --- rAF loop: tilt + spring drag --- */
   useEffect(() => {
     const tLerp = 0.08;
     const followLerp = 0.18;
-    const springK = 0.045;
-    const damping = 0.82;
+    const springK = 0.055;
+    const damping = 0.78;
 
     const loop = () => {
       const tc = tiltCurrent.current;
@@ -151,7 +130,7 @@ export default function HoloCard({
         dp.y += (dt.y - dp.y) * followLerp;
         vel.x = dp.x - dragPrev.current.x;
         vel.y = dp.y - dragPrev.current.y;
-        liftAmount.current = 1;
+        liftAmount.current = Math.min(liftAmount.current + 0.08, 1);
       } else {
         vel.x += -dp.x * springK;
         vel.y += -dp.y * springK;
@@ -159,10 +138,10 @@ export default function HoloCard({
         vel.y *= damping;
         dp.x += vel.x;
         dp.y += vel.y;
-        liftAmount.current *= 0.92;
+        liftAmount.current *= 0.9;
         if (
-          Math.abs(dp.x) < 0.3 && Math.abs(dp.y) < 0.3 &&
-          Math.abs(vel.x) < 0.1 && Math.abs(vel.y) < 0.1
+          Math.abs(dp.x) < 0.2 && Math.abs(dp.y) < 0.2 &&
+          Math.abs(vel.x) < 0.05 && Math.abs(vel.y) < 0.05
         ) {
           dp.x = 0; dp.y = 0; vel.x = 0; vel.y = 0;
           liftAmount.current = 0;
@@ -170,13 +149,14 @@ export default function HoloCard({
       }
 
       const lift = liftAmount.current;
+      const isHover = hoveringRef.current;
 
       const wrap = wrapRef.current;
       if (wrap) {
-        wrap.style.transform = `translate(${dp.x}px, ${dp.y}px)`;
+        wrap.style.transform = `translate3d(${dp.x}px, ${dp.y}px, 0)`;
         const glowEl = wrap.querySelector(".card-glow-wrap") as HTMLElement;
         if (glowEl) {
-          const hoverS = hovering && lift < 0.1 ? 1 : 0;
+          const hoverS = isHover && lift < 0.1 ? 1 : 0;
           const blur1 = 20 + lift * 50 + hoverS * 20;
           const spread1 = lift * 10;
           const a1 = 0.15 + lift * 0.2 + hoverS * 0.08;
@@ -187,7 +167,7 @@ export default function HoloCard({
         }
       }
 
-      const baseScale = hovering ? 1.05 : 1;
+      const baseScale = isHover ? 1.05 : 1;
       const liftScale = baseScale + lift * 0.03;
       const card = cardRef.current;
       if (card && !draggingRef.current) {
@@ -199,13 +179,13 @@ export default function HoloCard({
       const glare = glareRef.current;
       if (glare) {
         glare.style.background = `radial-gradient(ellipse at ${tc.px}% ${tc.py}%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.08) 30%, transparent 60%)`;
-        glare.style.opacity = hovering || lift > 0.1 ? "1" : "0";
+        glare.style.opacity = isHover || lift > 0.1 ? "1" : "0";
       }
 
       const holo = holoRef.current;
       if (holo) {
         holo.style.backgroundPosition = `${tc.px}% ${tc.py}%`;
-        holo.style.opacity = hovering ? "0.5" : "0";
+        holo.style.opacity = isHover ? "0.5" : "0";
       }
 
       rafId.current = requestAnimationFrame(loop);
@@ -213,7 +193,7 @@ export default function HoloCard({
 
     rafId.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId.current);
-  }, [hovering]);
+  }, []);
 
   const aspectClass = aspect === "1/1" ? "aspect-square" : "aspect-[3/4]";
 
@@ -225,10 +205,10 @@ export default function HoloCard({
       }`}
       style={{
         transitionDelay: open ? `${delay}ms` : "0ms",
-        zIndex: isDragging ? 100 : "auto",
         position: "relative",
-        cursor: isDragging ? "grabbing" : "grab",
+        cursor: "grab",
         touchAction: "none",
+        contain: "layout style",
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -241,7 +221,7 @@ export default function HoloCard({
           className="relative will-change-transform"
           style={{
             transformStyle: "preserve-3d",
-            transition: isDragging || hovering ? "none" : "transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: hovering ? "none" : "transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
             borderRadius: "16px",
             overflow: "hidden",
           }}
@@ -249,7 +229,6 @@ export default function HoloCard({
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
         >
-          {/* Glass frame */}
           <div
             className="p-[5px] sm:p-[6px]"
             style={{
@@ -263,7 +242,6 @@ export default function HoloCard({
             }}
           >
             <div className="relative overflow-hidden" style={{ borderRadius: "11px" }}>
-              {/* Image */}
               <div className={`relative ${aspectClass} bg-neutral-950`}>
                 <img
                   src={src}
@@ -274,49 +252,32 @@ export default function HoloCard({
                   loading="lazy"
                   draggable={false}
                 />
-
-                {/* Holographic overlay */}
                 <div
                   ref={holoRef}
-                  className="absolute inset-0 pointer-events-none transition-opacity duration-400 mix-blend-color-dodge"
+                  className="absolute inset-0 pointer-events-none mix-blend-color-dodge"
                   style={{
                     background: "linear-gradient(115deg, transparent 15%, rgba(255,80,180,0.25) 25%, rgba(80,200,255,0.2) 35%, rgba(180,255,80,0.15) 45%, rgba(255,180,80,0.2) 55%, rgba(130,80,255,0.25) 65%, rgba(255,80,180,0.2) 75%, transparent 85%)",
                     backgroundSize: "200% 200%",
                     opacity: 0,
+                    transition: "opacity 0.4s ease",
                   }}
                 />
-
-                {/* Scan-lines */}
                 <div
-                  className={`absolute inset-0 pointer-events-none transition-opacity duration-400 mix-blend-overlay ${hovering ? "opacity-25" : "opacity-0"}`}
+                  className={`absolute inset-0 pointer-events-none mix-blend-overlay transition-opacity duration-400 ${hovering ? "opacity-25" : "opacity-0"}`}
                   style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.04) 1px, rgba(255,255,255,0.04) 2px)" }}
                 />
-
-                {/* Glare */}
                 <div
                   ref={glareRef}
-                  className="absolute inset-0 pointer-events-none transition-opacity duration-300 mix-blend-soft-light"
-                  style={{ opacity: 0 }}
+                  className="absolute inset-0 pointer-events-none mix-blend-soft-light"
+                  style={{ opacity: 0, transition: "opacity 0.3s ease" }}
                 />
               </div>
-
-              {/* Glass divider */}
               <div className="relative h-[1px]">
                 <div
                   className={`absolute inset-x-0 h-[1px] transition-opacity duration-400 ${hovering ? "opacity-70" : "opacity-30"}`}
                   style={{ background: "linear-gradient(90deg, transparent, rgba(200,210,255,0.5) 20%, rgba(255,255,255,0.7) 50%, rgba(200,210,255,0.5) 80%, transparent)" }}
                 />
-                <div
-                  className={`absolute -top-[3px] inset-x-0 h-[7px] transition-opacity duration-400 ${hovering ? "opacity-40" : "opacity-10"}`}
-                  style={{
-                    background: "linear-gradient(180deg, transparent, rgba(180,200,255,0.06) 40%, rgba(255,255,255,0.05) 60%, transparent)",
-                    backdropFilter: "blur(4px)",
-                    WebkitBackdropFilter: "blur(4px)",
-                  }}
-                />
               </div>
-
-              {/* Name plate */}
               <div
                 className="relative px-3 py-2.5 sm:px-4 sm:py-3"
                 style={{
@@ -331,8 +292,6 @@ export default function HoloCard({
               </div>
             </div>
           </div>
-
-          {/* Rainbow border */}
           <div
             className={`absolute inset-0 z-30 pointer-events-none transition-opacity duration-500 ${hovering ? "opacity-80" : "opacity-0"}`}
             style={{
@@ -351,3 +310,6 @@ export default function HoloCard({
     </div>
   );
 }
+
+const HoloCard = memo(HoloCardInner);
+export default HoloCard;
