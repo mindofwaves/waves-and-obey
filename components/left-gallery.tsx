@@ -7,6 +7,9 @@ const initialCovers = [
   { src: "/blobrender-wvs.png", title: "Blob Render" },
   { src: "/bands-cover.png", title: "New Bands Cover" },
   { src: "/games-heartbreaks.png", title: "Games & Heartbreaks" },
+  { src: "/destruction-cover.png", title: "Total Destruction" },
+  { src: "/twofaced-glitch.png", title: "Two Faced Glitch" },
+  { src: "/blobrender-cosmic.png", title: "Cosmic Render" },
 ];
 
 interface LeftGalleryProps {
@@ -86,10 +89,10 @@ export default function LeftGallery({ open, onClose }: LeftGalleryProps) {
             className={`text-white/25 text-sm sm:text-base font-body tracking-[0.15em] uppercase mb-14 sm:mb-20 transition-all duration-700 ease-out ${open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
             style={{ transitionDelay: open ? "200ms" : "0ms" }}
           >
-            Drag to reorder
+            Hold &amp; drag to reorder
           </p>
 
-          <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 max-w-6xl">
+          <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-10 max-w-6xl">
             {covers.map((item, i) => (
               <div key={item.src} data-card-index={i}>
                 <HoloCard

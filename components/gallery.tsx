@@ -7,6 +7,13 @@ const initialDesigns = [
   { src: "/porsche.png", title: "GTR 3S Poster" },
   { src: "/waves-piece.png", title: "WAVE$ Piece" },
   { src: "/bmw-dither.png", title: "BMW Dither" },
+  { src: "/spider-poster.png", title: "Spider Dither" },
+  { src: "/itslit-trees.png", title: "It's Lit" },
+  { src: "/itslit-woman.png", title: "Forest Silhouette" },
+  { src: "/stay-clean.png", title: "Stay Clean" },
+  { src: "/twofaced-poster.png", title: "Two Faced" },
+  { src: "/heartbreak-beetle.png", title: "Heartbreak Promo" },
+  { src: "/mesh-portrait.png", title: "Mesh Portrait" },
 ];
 
 interface GalleryProps {
@@ -86,10 +93,10 @@ export default function Gallery({ open, onClose }: GalleryProps) {
             className={`text-white/25 text-sm sm:text-base font-body tracking-[0.15em] uppercase mb-14 sm:mb-20 transition-all duration-700 ease-out ${open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
             style={{ transitionDelay: open ? "200ms" : "0ms" }}
           >
-            Drag to reorder
+            Hold &amp; drag to reorder
           </p>
 
-          <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 max-w-6xl">
+          <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-10 max-w-6xl">
             {designs.map((design, i) => (
               <div key={design.src} data-card-index={i}>
                 <HoloCard

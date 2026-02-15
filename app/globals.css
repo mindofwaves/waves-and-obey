@@ -299,12 +299,18 @@ body {
   }
 }
 
-/* Touch: always show label, bigger tap target */
-@media (hover: none) {
+/* Touch phones: always show label, bigger tap target */
+@media (hover: none) and (max-width: 767px) {
   .nav-pill {
     padding: 12px 18px;
     gap: 8px;
   }
+  .nav-pill-text {
+    opacity: 0.6;
+  }
+}
+/* Touch tablets (768px+): same hover behavior as desktop via pointer events */
+@media (hover: none) and (min-width: 768px) {
   .nav-pill-text {
     opacity: 0.6;
   }

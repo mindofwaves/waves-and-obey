@@ -45,26 +45,72 @@ function HoloCardInner({
   const indexRef = useRef(index);
   indexRef.current = index;
 
-  const isTouchDevice = useRef(false);
+  /* Long-press state for phone drag */
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressReady = useRef(false);
+  const pendingPointerId = useRef<number | null>(null);
 
-  useEffect(() => {
-    isTouchDevice.current = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  const isPhone = useCallback(() => {
+    return window.innerWidth < 768;
   }, []);
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (isTouchDevice.current) return;
-    e.preventDefault();
-    const el = wrapRef.current;
-    if (el) el.setPointerCapture(e.pointerId);
+  const isTouch = useCallback(() => {
+    return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  }, []);
+
+  const startDrag = useCallback((x: number, y: number, pointerId?: number) => {
     draggingRef.current = true;
     dragVelocity.current = { x: 0, y: 0 };
-    dragStartMouse.current = { x: e.clientX, y: e.clientY };
+    dragStartMouse.current = { x, y };
     dragStartPos.current = { x: dragPos.current.x, y: dragPos.current.y };
-    lastPointer.current = { x: e.clientX, y: e.clientY };
+    lastPointer.current = { x, y };
     if (wrapRef.current) wrapRef.current.style.zIndex = "100";
   }, []);
 
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    const phone = isPhone();
+    const touch = isTouch();
+
+    if (phone && touch) {
+      /* Phone: long-press to drag (300ms hold) */
+      e.preventDefault();
+      const el = wrapRef.current;
+      if (el) el.setPointerCapture(e.pointerId);
+      pendingPointerId.current = e.pointerId;
+      lastPointer.current = { x: e.clientX, y: e.clientY };
+      dragStartMouse.current = { x: e.clientX, y: e.clientY };
+      longPressReady.current = false;
+      longPressTimer.current = setTimeout(() => {
+        longPressReady.current = true;
+        startDrag(e.clientX, e.clientY, e.pointerId);
+      }, 300);
+    } else {
+      /* Desktop / tablet: immediate drag */
+      e.preventDefault();
+      const el = wrapRef.current;
+      if (el) el.setPointerCapture(e.pointerId);
+      startDrag(e.clientX, e.clientY, e.pointerId);
+    }
+  }, [isPhone, isTouch, startDrag]);
+
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    lastPointer.current = { x: e.clientX, y: e.clientY };
+
+    /* If waiting for long press, cancel if moved too far */
+    if (longPressTimer.current && !longPressReady.current) {
+      const dx = e.clientX - dragStartMouse.current.x;
+      const dy = e.clientY - dragStartMouse.current.y;
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+        /* Release capture so scroll works */
+        if (pendingPointerId.current !== null && wrapRef.current) {
+          try { wrapRef.current.releasePointerCapture(pendingPointerId.current); } catch {}
+        }
+        return;
+      }
+    }
+
     if (!draggingRef.current) return;
     const dx = e.clientX - dragStartMouse.current.x;
     const dy = e.clientY - dragStartMouse.current.y;
@@ -72,10 +118,16 @@ function HoloCardInner({
       x: dragStartPos.current.x + dx,
       y: dragStartPos.current.y + dy,
     };
-    lastPointer.current = { x: e.clientX, y: e.clientY };
   }, []);
 
   const onPointerUp = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    longPressReady.current = false;
+    pendingPointerId.current = null;
+
     if (!draggingRef.current) return;
     draggingRef.current = false;
     dragTarget.current = { x: 0, y: 0 };
@@ -202,6 +254,12 @@ function HoloCardInner({
     return () => cancelAnimationFrame(rafId.current);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+  }, []);
+
   const aspectClass = aspect === "1/1" ? "aspect-square" : "aspect-[3/4]";
 
   return (
@@ -286,14 +344,14 @@ function HoloCardInner({
                 />
               </div>
               <div
-                className="relative px-3 py-2.5 sm:px-4 sm:py-3"
+                className="relative px-2.5 py-2 sm:px-4 sm:py-3"
                 style={{
                   background: "linear-gradient(180deg, rgba(10,10,15,0.85) 0%, rgba(15,15,25,0.92) 100%)",
                   backdropFilter: "blur(8px)",
                   WebkitBackdropFilter: "blur(8px)",
                 }}
               >
-                <p className="text-white/80 text-[11px] sm:text-xs font-body tracking-[0.2em] uppercase font-semibold truncate">
+                <p className="text-white/80 text-[10px] sm:text-xs font-body tracking-[0.15em] sm:tracking-[0.2em] uppercase font-semibold truncate">
                   {title}
                 </p>
               </div>
