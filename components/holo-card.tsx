@@ -274,7 +274,10 @@ function HoloCardInner({
         cursor: "grab",
         touchAction: "auto",
         contain: "layout style",
-      }}
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+      } as React.CSSProperties}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
