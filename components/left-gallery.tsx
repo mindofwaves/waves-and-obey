@@ -3,23 +3,23 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import HoloCard from "./holo-card";
 
-const initialDesigns = [
-  { src: "/porsche.png", title: "GTR 3S Poster" },
-  { src: "/waves-piece.png", title: "WAVE$ Piece" },
-  { src: "/bmw-dither.png", title: "BMW Dither" },
+const initialCovers = [
+  { src: "/blobrender-wvs.png", title: "Blob Render" },
+  { src: "/bands-cover.png", title: "New Bands Cover" },
+  { src: "/games-heartbreaks.png", title: "Games & Heartbreaks" },
 ];
 
-interface GalleryProps {
+interface LeftGalleryProps {
   open: boolean;
   onClose: () => void;
 }
 
-export default function Gallery({ open, onClose }: GalleryProps) {
+export default function LeftGallery({ open, onClose }: LeftGalleryProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [designs, setDesigns] = useState(initialDesigns);
+  const [covers, setCovers] = useState(initialCovers);
 
   const handleSwap = useCallback((from: number, to: number) => {
-    setDesigns((prev) => {
+    setCovers((prev) => {
       const next = [...prev];
       const tmp = next[from];
       next[from] = next[to];
@@ -68,7 +68,7 @@ export default function Gallery({ open, onClose }: GalleryProps) {
             src="/jellyfish-bg.png"
             alt=""
             className="w-full h-full object-cover"
-            style={{ filter: "blur(14px) saturate(1.4)" }}
+            style={{ filter: "blur(14px) saturate(1.6) hue-rotate(260deg) brightness(0.7)" }}
             draggable={false}
           />
         </div>
@@ -89,7 +89,7 @@ export default function Gallery({ open, onClose }: GalleryProps) {
             }`}
             style={{ transitionDelay: open ? "150ms" : "0ms" }}
           >
-            Selected Works
+            Cover Artworks
           </h2>
           <p
             className={`text-white/25 text-sm sm:text-base font-body tracking-[0.15em] uppercase mb-14 sm:mb-20 transition-all duration-700 ease-out ${
@@ -101,16 +101,16 @@ export default function Gallery({ open, onClose }: GalleryProps) {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 max-w-6xl sortable-grid">
-            {designs.map((design, i) => (
-              <div key={design.src} className="sortable-cell">
+            {covers.map((item, i) => (
+              <div key={item.src} className="sortable-cell">
                 <HoloCard
-                  src={design.src}
-                  title={design.title}
+                  src={item.src}
+                  title={item.title}
                   open={open}
                   delay={280 + i * 130}
-                  aspect="3/4"
+                  aspect="1/1"
                   index={i}
-                  totalCards={designs.length}
+                  totalCards={covers.length}
                   onDragOver={handleSwap}
                 />
               </div>

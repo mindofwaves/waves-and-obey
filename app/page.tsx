@@ -4,59 +4,61 @@ import { useState, useCallback } from "react";
 import Hero from "@/components/hero";
 import IntroVideo from "@/components/intro-video";
 import Gallery from "@/components/gallery";
+import LeftGallery from "@/components/left-gallery";
 
 export default function Home() {
   const [introVisible, setIntroVisible] = useState(true);
-  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
 
   const handleIntroComplete = useCallback(() => setIntroVisible(false), []);
-  const toggleGallery = useCallback(() => setGalleryOpen((p) => !p), []);
+
+  const anyPanelOpen = leftOpen || rightOpen;
 
   return (
     <main>
-      {/* Hero — always rendered behind everything */}
+      {/* Hero — always behind */}
       <Hero />
 
-      {/* Hamburger menu — appears after intro */}
-      <button
-        onClick={toggleGallery}
-        className={`fixed z-[60] flex items-center justify-center w-11 h-11 transition-all duration-500 ease-out
-          top-[max(1.75rem,env(safe-area-inset-top,1.75rem))]
-          right-[max(1.75rem,env(safe-area-inset-right,1.75rem))]
-          sm:top-10 sm:right-10
-          md:top-14 md:right-14
-          ${introVisible ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}
-        aria-label="Toggle menu"
+      {/* ---- Left arrow trigger ---- */}
+      <div
+        className={`nav-arrow nav-arrow-left ${anyPanelOpen ? "nav-arrow-hidden" : ""} ${introVisible ? "nav-arrow-hidden" : ""}`}
+        onClick={() => setLeftOpen(true)}
       >
-        <div className="relative w-7 h-5">
-          <span
-            className={`absolute left-0 w-full h-[2px] rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              galleryOpen
-                ? "top-[9px] bg-white rotate-45"
-                : "top-0 bg-[#1a1a1a]"
-            }`}
-          />
-          <span
-            className={`absolute left-0 top-[9px] w-full h-[2px] rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              galleryOpen
-                ? "bg-white opacity-0 scale-x-0"
-                : "bg-[#1a1a1a] opacity-100 scale-x-100"
-            }`}
-          />
-          <span
-            className={`absolute left-0 w-full h-[2px] rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              galleryOpen
-                ? "top-[9px] bg-white -rotate-45"
-                : "top-[18px] bg-[#1a1a1a]"
-            }`}
-          />
+        <div className="nav-arrow-bg" />
+        <div className="nav-arrow-preview">
+          <img src="/blobrender-wvs.png" alt="" draggable={false} />
         </div>
-      </button>
+        <div className="nav-arrow-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </div>
+        <span className="nav-arrow-label">Covers</span>
+      </div>
 
-      {/* Gallery overlay */}
-      <Gallery open={galleryOpen} onClose={() => setGalleryOpen(false)} />
+      {/* ---- Right arrow trigger ---- */}
+      <div
+        className={`nav-arrow nav-arrow-right ${anyPanelOpen ? "nav-arrow-hidden" : ""} ${introVisible ? "nav-arrow-hidden" : ""}`}
+        onClick={() => setRightOpen(true)}
+      >
+        <div className="nav-arrow-bg" />
+        <div className="nav-arrow-preview">
+          <img src="/porsche.png" alt="" draggable={false} />
+        </div>
+        <div className="nav-arrow-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </div>
+        <span className="nav-arrow-label">Works</span>
+      </div>
 
-      {/* Intro video — on top of everything */}
+      {/* Gallery overlays */}
+      <LeftGallery open={leftOpen} onClose={() => setLeftOpen(false)} />
+      <Gallery open={rightOpen} onClose={() => setRightOpen(false)} />
+
+      {/* Intro video — on top */}
       {introVisible && <IntroVideo onComplete={handleIntroComplete} />}
     </main>
   );

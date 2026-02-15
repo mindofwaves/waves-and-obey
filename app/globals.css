@@ -155,10 +155,151 @@ body {
   background-size: 180px 180px;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Sortable grid — smooth cell transitions                            */
+/* ------------------------------------------------------------------ */
+.sortable-grid {
+  position: relative;
+}
+.sortable-cell {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.45s ease;
+}
+
 /* Touch devices — activate holo on tap-hold */
 @media (hover: none) {
   .holo-card:active .holo-overlay,
   .holo-card:active .holo-glare {
     opacity: 0.5 !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Navigation arrows — side triggers                                  */
+/* ------------------------------------------------------------------ */
+.nav-arrow {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.5s ease;
+  overflow: hidden;
+}
+.nav-arrow-left  { left: 0; }
+.nav-arrow-right { right: 0; }
+
+.nav-arrow-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Frosted background strip */
+.nav-arrow-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+/* Blurred preview image behind the strip */
+.nav-arrow-preview {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  overflow: hidden;
+}
+.nav-arrow-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(6px) brightness(0.5) saturate(1.2);
+}
+
+/* Chevron icon */
+.nav-arrow-icon {
+  position: relative;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* Label text */
+.nav-arrow-label {
+  position: relative;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0);
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  writing-mode: vertical-lr;
+  margin-top: 12px;
+  transition: color 0.4s ease 0.1s;
+}
+.nav-arrow-left .nav-arrow-label {
+  transform: rotate(180deg);
+}
+
+/* ---- Hover state ---- */
+.nav-arrow:hover {
+  width: 80px;
+}
+.nav-arrow:hover .nav-arrow-bg {
+  background: rgba(0, 0, 0, 0.45);
+}
+.nav-arrow:hover .nav-arrow-preview {
+  opacity: 1;
+}
+.nav-arrow:hover .nav-arrow-icon {
+  color: rgba(255, 255, 255, 0.9);
+  animation: arrowPulse 1.5s ease-in-out infinite;
+}
+.nav-arrow:hover .nav-arrow-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Left arrow: chevron bounces left */
+.nav-arrow-left:hover .nav-arrow-icon {
+  animation: arrowBounceLeft 1.5s ease-in-out infinite;
+}
+/* Right arrow: chevron bounces right */
+.nav-arrow-right:hover .nav-arrow-icon {
+  animation: arrowBounceRight 1.5s ease-in-out infinite;
+}
+
+@keyframes arrowBounceLeft {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-5px); }
+}
+@keyframes arrowBounceRight {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(5px); }
+}
+
+/* ---- Active / click feedback ---- */
+.nav-arrow:active .nav-arrow-bg {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Hide arrows on very small screens — use swipe instead */
+@media (max-width: 480px) {
+  .nav-arrow {
+    width: 36px;
+  }
+  .nav-arrow:hover {
+    width: 56px;
+  }
+  .nav-arrow-label {
+    display: none;
   }
 }
